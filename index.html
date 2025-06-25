@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      /* 将这个元素设为flex容器 */
+      flex-direction: column;
+      /* 设置子元素沿竖直方向排列 */
+      align-items: center;
+      /* 让所有子元素在「交叉轴」方向上居中对齐。 */
+      padding: 100px;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+    }
+
+    .puzzle {
+      width: 300px;
+      height: 300px;
+      display: flex;
+      flex-wrap: wrap;
+      /* 允许子元素换行排列，而不是默认地一行挤到底 */
+      border: 2px solid #333;
+      position: relative;
+    }
+
+    .tile {
+      width: 100px;
+      height: 100px;
+      box-sizing: border-box;
+      /* 让元素的 宽度和高度包含了边框和内边距，避免设置宽高时元素实际尺寸变大。 */
+      border: 1px solid #ccc;
+      background-image: url('./images/Ecust.jpg');
+      background-size: 300px 300px;
+      cursor: pointer;
+      /* 鼠标悬停在元素上时，显示“手指”样式，表示这个元素是可点击的。 */
+      transition: border 0.2s;
+      /* 当元素的边框属性变化时，过渡动画持续 0.2 秒，效果更平滑。 */
+    }
+
+    .tile.selected {
+      border: 2px solid #f00;
+      /* 当 tile 被选中时，边框变为红色 */
+    }
+
+    .message {
+      margin-top: 20px;
+      font-size: 1.2em;
+      color: green;
+    }
+
+    .btn {
+      margin-top: 10px;
+      padding: 8px 16px;
+      font-size: 1em;
+      cursor: pointer;
+      background-color: #5b636b;
+      color: white;
+      border: none;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>拼图小游戏</h1>
+  <div class="puzzle" id="puzzle"></div>
+  <div class="message" id="message"></div>
+  <button class="btn" onclick="shuffleTiles()">重新开始</button>
+  <script>
+    const puzzle = document.getElementById('puzzle');
+    const message = document.getElementById('message');
+    const size = 3; // 拼图的行列数
+    const totalTiles = size * size; // 拼图的总块数
+    let tiles = [];
+    let selected = [];
+    let draggedTile = null;
+    // 生成拼图块
+    function createTiles() {
+      tiles = [];
+      for (let i = 0; i < totalTiles; i++) {
+        const tile = document.createElement('div');
+        tile.classList.add('tile');
+        tile.dataset.index = i;
+        // 相当于给元素添加属性 data-index="i"
+        const row = Math.floor(i / size)
+        const col = i % size;
+        tile.style.backgroundPosition = `-${col * 100}px -${row * 100}px`;
+        // 乘以 100 表示每个 tile 的尺寸是 100px（宽高）。
+        // 取负值 - 是因为我们想把背景图往左和往上移动，从而只显示背景图的某个部分。
+        // tile.addEventListener('click', () =>
+        //   selectTile(tile));
+        // // 当用户点击这个 tile 时，会调用函数 selectTile，并把当前点击的 tile 作为参数传进去
+        // // 这里是箭头写法
+        // tiles.push(tile);
+        // 把这个 tile 添加进个数组 tiles：
+        // 让拼图块可拖拽
+        tile.setAttribute('draggable', true);
+        // 让该 DOM 元素变得可以被拖动（默认 <div> 是不可拖动的）。
+        // 等效于 HTML 写法：<div draggable="true">
+
+        // 绑定拖拽开始事件
+        tile.addEventListener('dragstart', (e) => {
+          draggedTile = tile;
+          e.dataTransfer.effectAllowed = 'move';
+        });
+
+        // 拖拽经过时允许放置
+        tile.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+        });
+
+        // 放置事件，交换位置
+        tile.addEventListener('drop', (e) => {
+          e.preventDefault();
+          if (draggedTile && draggedTile !== tile) {
+            swapTiles(draggedTile, tile);
+            checkWin();
+          }
+          draggedTile = null;
+        });
+
+        tiles.push(tile);
+      }
+    }
+
+    function shuffleTiles() {
+      message.textContent = '';
+      // 清空页面中的提示信息
+      createTiles();
+      for (let i = tiles.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        // 生成一个随机数 j，范围是 0 到 i（包括 i）
+        [tiles[i], tiles[j]] = [tiles[j], tiles[i]];
+        // Fisher-Yates 洗牌算法，用来随机打乱数组顺序。
+        // 交换 tiles[i] 和 tiles[j] 的位置
+      }
+      renderTiles();
+      // 调用 renderTiles 函数来重新渲染拼图块 
+    }
+
+    function renderTiles() {
+      puzzle.innerHTML = '';
+      tiles.forEach(tile => {
+        puzzle.appendChild(tile);
+        // 把每个 tile 添加到拼图容器中
+        // push 是数组方法，只会把元素加入数组中，不会影响 DOM 结构，页面不会变化。
+      });
+    }
+
+    function selectTile(tile) {
+      if (selected.length === 0) {
+        tile.classList.add('selected');
+        // 如果没有选中的 tile，就把当前 tile 标记为选中
+        selected.push(tile);
+        // 把当前 tile 添加到 selected 数组中        
+      }
+      else if (selected.length === 1 && selected[0] !== tile) {
+        // 如果已经选中了一个 tile，并且当前 tile 不是之前选中的那个
+        tile.classList.add('selected');
+        // 把当前 tile 标记为选中
+        selected.push(tile);
+        // 把当前 tile 添加到 selected 数组中
+
+        // 交换两个拼图块
+        swapTiles(selected[0], selected[1]);
+
+        // 清除选中样式和数组，准备下一次选择
+        selected.forEach(t => t.classList.remove('selected'));
+        selected = [];
+        checkWin();
+      }
+    }
+    function swapTiles(tile1, tile2) {
+      const index1 = tiles.indexOf(tile1);
+      const index2 = tiles.indexOf(tile2);
+      // 获取 tile1 和 tile2 在 tiles 数组中的索引
+      [tiles[index1], tiles[index2]] = [tiles[index2], tiles[index1]];
+      // 交换这两个 tile 在 tiles 数组中的位置
+      renderTiles();
+    }
+    function checkWin() {
+      const isCorrect = tiles.every((tile, index) => {
+        return tile.dataset.index == index;
+        // 检查每个 tile 的 data-index 属性是否与其在数组中的索引相同
+        // every 方法用于检测数组中 所有元素 是否都满足给定的条件。
+
+      });
+      if (isCorrect) {
+        message.textContent = '🎉 恭喜你，拼图完成！';
+      } else {
+        message.textContent = '';
+      }
+    }
+    shuffleTiles();
+  </script>
+</body>
+
+</html>
