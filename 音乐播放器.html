@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      /* 元素的高度等于视口（viewport）高度的100%，也就是浏览器窗口的高度。 */
+      background: #f0f0f0;
+    }
+
+    #player {
+      /* # 表示id选择器 .表示类选择器 */
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+
+    #controls button {
+      margin: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+    }
+
+    #progress {
+      width: 100%;
+      height: 10px;
+      background: #ddd;
+      margin-top: 10px;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+
+    #progress-bar {
+      height: 100%;
+      width: 0%;
+      background: #4caf50;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="player">
+    <h2 id="title">🎵 Music Player</h2>
+    <audio id="audio" src="music/song1.mp3"></audio>
+    <div id="controls">
+      <button id="prev">⏮️ 上一首</button>
+      <button id="play">▶️ 播放</button>
+      <button id="next">⏭️ 下一首</button>
+    </div>
+    <div id="progress">
+      <div id="progress-bar"></div>
+    </div>
+    <p id="current-song">当前歌曲:song1.mp3</p>
+  </div>
+
+
+  <script>
+    const audio = document.getElementById('audio');
+    const playButton = document.getElementById('play');
+    const prevButton = document.getElementById('prev');
+    const nextButton = document.getElementById('next');
+    const progressBar = document.getElementById('progress-bar');
+    const currentSong = document.getElementById('current-song');
+
+    const songs = ['music/song1.mp3', 'music/song2.mp3'];
+    let currentIndex = 0;
+    let isPlaying = false;
+
+    function loadSong(index) {
+      audio.src = songs[index];
+      currentSong.textContent = '当前歌曲：' + songs[index];
+    }
+    function playPause() {
+      if (isPlaying) {
+        audio.pause();
+        playButton.textContent = '▶️ 播放';
+      } else {
+        audio.play();
+        playButton.textContent = '⏸️ 暂停';
+      }
+      isPlaying = !isPlaying;
+    }
+    function nextSong() {
+      currentIndex = (currentIndex + 1) % songs.length;
+      loadSong(currentIndex);
+      audio.play();
+      playButton.textContent = '⏸️ 暂停';
+      isPlaying = true;
+    }
+
+    function prevSong() {
+      currentIndex = (currentIndex - 1 + songs.length) % songs.length;
+      // 这里的两个保证在索引范围内的方式要记住！
+      loadSong(currentIndex);
+      audio.play();
+      playButton.textContent = '⏸️ 暂停';
+      isPlaying = true;
+    }
+    audio.addEventListener('timeupdate', () => {
+      const progress = (audio.currentTime / audio.duration) * 100;
+      progressBar.style.width = progress + '%';
+      // 将绿色进度条的宽度设置为对应的百分比，例如 "50%"。让视觉上看到播放进度条在动态增加。
+    });
+    audio.addEventListener('ended', nextSong);
+    // 自动播放下一首
+    playButton.addEventListener('click', playPause);
+    nextButton.addEventListener('click', nextSong);
+    prevButton.addEventListener('click', prevSong);
+
+    loadSong(currentIndex);
+    // 初始化加载第一首歌
+  </script>
+</body>
+
+</html>
